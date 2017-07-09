@@ -7,6 +7,9 @@
 #main {
   margin: auto 100px;
   width: 526px;
+}
+
+div {
   border: 1px solid black;
 }
 
@@ -24,7 +27,6 @@ video {
 
 .side {
   width: 260px;
-  border: 1px solid black;
   float: left;
 }
 
@@ -39,19 +41,18 @@ video {
 <body>
   <div id='main'>
     <div>
+      <button onclick=joinChatroom()>Call</button>
+      <button onclick=leaveChatroom()>Hang Up</button>
+      <p>ICE Connection State: <span id='connection'>-</span></p>
+      <p>ICE Gathering State: <span id='gathering'>-</span></p> 
+    </div>
+    <div>
       <h3>Merged</h3>
       <canvas id='mergedCanvas'></canvas>
     </div>
     <div class='side' id='local'>
       <h3>Local</h3>
-      <p>Canvas:</p>
-      <canvas class='sideCanvas' id="localCanvas"></canvas>
-      <p>Video:</p>
       <video autoplay muted id="localVideo"></video>
-      <button onclick=joinChatroom()>Call</button>
-      <button onclick=leaveChatroom()>Hang Up</button>
-      <p>ICE Connection State: <span id='connection'>-</span></p>
-      <p>ICE Gathering State: <span id='gathering'>-</span></p>
     </div>
     <div class='side' id='remote'>
       <h3>Remote</h3>
