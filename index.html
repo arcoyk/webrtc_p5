@@ -16,7 +16,7 @@ video {
   background: yellow;
 }
 
-canvas {
+.sideCanvas {
   width: 260px;
   height: 200px;
   background: green;
@@ -28,14 +28,24 @@ canvas {
   float: left;
 }
 
+#mergedCanvas {
+  width: 520px;
+  height: 200px;
+    background: green;
+}
+
 -->
 </style>
 <body>
   <div id='main'>
+    <div>
+      <h3>Merged</h3>
+      <canvas id='mergedCanvas'></canvas>
+    </div>
     <div class='side' id='local'>
       <h3>Local</h3>
       <p>Canvas:</p>
-      <canvas id="localCanvas"></canvas>
+      <canvas class='sideCanvas' id="localCanvas"></canvas>
       <p>Video:</p>
       <video autoplay muted id="localVideo"></video>
       <button onclick=joinChatroom()>Call</button>
@@ -50,5 +60,8 @@ canvas {
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/main.js"></script>
+  <script type="text/javascript" src="processing.min.js"></script>
+  <script type="text/processing" data-processing-target="mergedCanvas" src="faceplay.js"></script>
+
 </body>
 </html>
