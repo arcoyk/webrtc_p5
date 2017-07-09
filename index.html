@@ -2,39 +2,50 @@
 <html>
 <style type='text/css'>
 <!--
+/* Facetime HD src = 640 x 480*/
+
 #main {
   margin: auto 100px;
-  width: 610px;
+  width: 526px;
   border: 1px solid black;
 }
-#local {
-  width: 300px;
-  border: 1px solid black;
-  float: left;
-}
-#remote {
-  width: 300px;
-  border: 1px solid black;
-  float: left;
-}
+
 video {
-  width: 300px;
-  height: 300px;
+  width: 260px;
+  height: 200px;
   background: yellow;
 }
+
+canvas {
+  width: 260px;
+  height: 200px;
+  background: green;
+}
+
+.side {
+  width: 260px;
+  border: 1px solid black;
+  float: left;
+}
+
 -->
 </style>
 <body>
   <div id='main'>
-    <div id='local'>
-      <video autoplay id="localVideo" width="1280px" height="720px"></video>
+    <div class='side' id='local'>
+      <h3>Local</h3>
+      <p>Canvas:</p>
+      <canvas id="localCanvas"></canvas>
+      <p>Video:</p>
+      <video autoplay muted id="localVideo"></video>
       <button onclick=joinChatroom()>Call</button>
       <button onclick=leaveChatroom()>Hang Up</button>
       <p>ICE Connection State: <span id='connection'>-</span></p>
       <p>ICE Gathering State: <span id='gathering'>-</span></p>
     </div>
-    <div id='remote'>
-      <video autoplay id="remoteVideo" width="1280px" height="720px"></video>
+    <div class='side' id='remote'>
+      <h3>Remote</h3>
+      <video autoplay id="remoteVideo"></video>
     </div>
   </div>
   <script src="/socket.io/socket.io.js"></script>

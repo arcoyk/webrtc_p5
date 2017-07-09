@@ -70,9 +70,9 @@ function grabWebCamVideo() {
 var localStream;
 // SGN 5
 function gotStream(stream) {
-  console.log('create');
   localStream = stream;
   document.querySelector('#localVideo').src = window.URL.createObjectURL(localStream);
+  setInterval(drawLocalVideoToCanvas, 15);
   // socket.emit('create or join', room);
 }
 
@@ -215,3 +215,10 @@ function signalingMessageCallback(message) {
 function logError(err) {
   console.log(err.toString(), err);
 }
+
+var localCanvas = document.querySelector('#localCanvas');
+var localVideo = document.querySelector('#localVideo');
+function drawLocalVideoToCanvas() {
+  localCanvas.getContext('2d').drawImage(localVideo, 0, 0, localCanvas.width, localCanvas.height);
+}
+
