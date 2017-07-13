@@ -45,6 +45,8 @@ video {
       <button onclick=leaveChatroom()>Hang Up</button>
       <p>ICE Connection State: <span id='connection'>-</span></p>
       <p>ICE Gathering State: <span id='gathering'>-</span></p> 
+      <p>Local ID: <span id='localId'>-</span></p>
+      <p>Remote ID: <span id='remoteId'>-</span></p>
     </div>
     <div>
       <h3>Merged</h3>
@@ -61,8 +63,7 @@ video {
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/main.js"></script>
-  <script type="text/javascript" src="processing.min.js"></script>
-  <script type="text/processing" data-processing-target="mergedCanvas" src="faceplay.js"></script>
-
+  <script type="text/javascript" src="js/processing.min.js"></script>
+  <script type="text/processing" data-processing-target="mergedCanvas" src="js/game.js"></script>
 </body>
 </html>

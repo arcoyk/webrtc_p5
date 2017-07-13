@@ -20,39 +20,15 @@ var configuration = {
 };
 var localVideo = document.querySelector('#localVideo');
 var remoteVideo = document.querySelector('#remoteVideo');
-var clientId;
+// There are only two people...
+// Using false instead of undefined to safely represent uninitialization
+var localId;
+var remoteId;
 // Where "io" come from?
 var socket = io.connect();
 var room = 'room1'
 
-// (SGN 1 - SGN 3) Client emits 'ipaddr' -> Server responses its IP address.
-// (SGN 4 - SGN 7-*-*) GetUserMedia -> Ask a 'room' -> 'create', 'join' or 'fail'.
-// (SGN 8 - SGN 10) CreatePeerConn -> CreateDataChannel -> CreateOffer (and setup callback for each event).
-// (SGN 11 - SGN 14) Answer to the offer and setup local / remote config.
-// ACTION LIST:
-// Bob and Alice = Clients, Kevin = Server
-// 1. Bob and Alice hold socket for each.
-// 2. Bob and Alice ask 'create or join' a room to Kevin, and get 'ready'.
-// 3. Suppose Bob get first. Bob gets 'created' emission followed by 'joined' emission.
-// 3. Bob and Alice create RTCPeerConnection with configuration (ICE, STUN, TURN servers).
-// 4. Bob creates dataChannel (along with event handlers of dataChannel).
-// 5. Bob offers description and setLocalDescription.
-// 6. Alice get the offer and setRemoteDescription, then send an answer followed by setLocalDescription.
-// 7. Bob get the answer and setRemoteDescription.
-
-// SGN 1
-if (location.hostname.match(/localhost|127\.0\.0/)) {
-  socket.emit('ipaddr');
-}
-
-// SGN 3
-socket.on('ipaddr', function(ipaddr) {
-  // Do nothing
-  // console.log('Ipadder- Server IP address is: ' + ipaddr);
-});
-
 grabWebCamVideo();
-// SGN 4
 function grabWebCamVideo() {
   navigator.mediaDevices.getUserMedia({
     audio: false,
@@ -68,16 +44,15 @@ function grabWebCamVideo() {
 }
 
 var localStream;
-// SGN 5
 function gotStream(stream) {
   localStream = stream;
   document.querySelector('#localVideo').src = window.URL.createObjectURL(localStream);
-  // socket.emit('create or join', room);
+  joinChatroom();
 }
 
-
 function joinChatroom() {
-  socket.emit('create or join', room);
+  console.log('joining');
+  socket.emit('join', room);
 }
 
 function leaveChatroom() {
@@ -85,32 +60,35 @@ function leaveChatroom() {
   socket.emit('bye', room);
 }
 
-// SGN 7-1
-socket.on('created', function(room, in_clientId) {
-  // Is this proper JavaScript style?
-  // clientId = in_clientId;
+socket.on('joined', function(room, _localId) {
+  console.log('joined');
+  localId = _localId;
+  document.querySelector('#localId').innerText = localId;
 });
 
-// SGN 7-2
-socket.on('joined', function(room, in_clientId) {
-  // clientId = in_clientId;
-  // If you're alone
-  // startLocalVideo();
-  // createPeerConnection(configuration);
+socket.on('buddy', function(room) {
+  console.log('get buddy signal');
+  console.log('exchanging id');
+  socket.emit('exchangeId', room);
 });
 
-// SGN 7-2-1
-socket.on('ready', function() {
+socket.on('exchangeId', function(room, _remoteId) {
+  remoteId = _remoteId;
+  document.querySelector('#remoteId').innerText = remoteId;
+  console.log('id exchanged');
   createPeerConnection(configuration);
 });
 
-// SGN 8
+function isFirst() {
+  return localId < remoteId;
+}
+
 var peerConn;
 var dataChannel;
+// Where does peerConn connect to server when it exchange ICE throught the server?
 function createPeerConnection(config) {
   peerConn = new RTCPeerConnection(config);
   peerConn.onicecandidate = function(event) {
-    // SGN 11 Send ICE Candidates
     if (event.candidate) {
       sendMessage({
         type: 'candidate',
@@ -125,61 +103,51 @@ function createPeerConnection(config) {
   peerConn.onaddstream = function(event) {
     remoteVideo.src = URL.createObjectURL(event.stream);
   }
-  // isInitiator has been used, but  
-  // peerConn close from the initiator 
-  // leaves non-initiator behind.
-  // So, I take "First come, first served" strategy.
-  // 
-  // Creating two redundant dataChannels?
-  // addStream before negotiation.
-  peerConn.addStream(localStream);
-  dataChannel = peerConn.createDataChannel('myDataChannel');
-  onDataChannelCreated(dataChannel);
-  peerConn.createOffer(onLocalSessionCreated, logError);
-  // Is this function called when the other slide excuted 'createDataChannel'?
-  peerConn.ondatachannel = function(event) {
-    dataChannel = event.channel;
-    onDataChannelCreated(dataChannel);
-  };
   peerConn.oniceconnectionstatechange = function(event) {
     document.querySelector('#connection').innerText = event.target.iceConnectionState;
     document.querySelector('#gathering').innerText = event.target.iceGatheringState;
   };
+  // addStream before negotiation.
+  peerConn.addStream(localStream);
+  if (isFirst()) {
+    dataChannel = peerConn.createDataChannel('myChannel');
+    setChannelEventHandler(dataChannel);
+  } else {
+    peerConn.ondatachannel = function(event) {
+      dataChannel = event.channel;
+      setChannelEventHandler(dataChannel);
+    };
+  }
+  peerConn.createOffer(onLocalSessionCreated, logError);
 }
 
-// SGN 9
-function onDataChannelCreated(channel) {
+var remoteData = {};
+function setChannelEventHandler(channel) {
   channel.onopen = function() {
-    console.log('Channel opened!!!');
+   console.log('Channel opened!!!');
   };
   channel.onclose = function() {
     console.log('Channel closed');
   };
   channel.onerror = function() {
-    console.log('channel error');
+    console.log('Channel error');
   };
   channel.onmessage = function() {
-    console.log('got message');
+    remoteData = JSON.parse(event.data);
   };
 }
 
-// SGN 10 offer
 function onLocalSessionCreated(desc) {
-  // setLocalDescription fires onicecandidate.
   peerConn.setLocalDescription(desc, function() {
     sendMessage(peerConn.localDescription);
   }, logError);
 }
 
-// SGN 12
 function sendMessage(message) {
-  console.log('Client sending message: ', message);
   socket.emit('message', message);
 }
 
-// SGN 14
 socket.on('message', function(message) {
-  console.log('Client received message:', message);
   signalingMessageCallback(message);
 });
 
@@ -187,22 +155,18 @@ socket.on('message', function(message) {
 // Temporary avoiding "DOMException: Error processing ICE candidate" by a flag. 
 var flag = false;
 function signalingMessageCallback(message) {
-  // Where are these types decided?
   if (message.type === 'offer') {
-    // SGN 15
     console.log("GET OFFER");
     peerConn.setRemoteDescription(new RTCSessionDescription(message), function() {flag = true}, logError);
     peerConn.createAnswer(onLocalSessionCreated, logError);
   } else if (message.type === 'answer') {
-    // SGN 15
     console.log("GET ANSWER:");
     peerConn.setRemoteDescription(new RTCSessionDescription(message), function() {flag = true}, logError);
   } else if (message.type === 'candidate') {
-    // SGN 15
     console.log("GET CANDIDATE");
     if (flag) {
       peerConn.addIceCandidate(new RTCIceCandidate({
-      candidate: message.candidate
+        candidate: message.candidate
       }));
     }
   } else if (message === 'bye') {
